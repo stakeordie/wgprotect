@@ -3,35 +3,34 @@
     - sudo apt dist-upgrade
     - sudo apt install openresolv
     - sudo add-apt-repository ppa:wireguard/wireguard
-    - sudo apt-get install wireguard
+    - sudo apt install wireguard
     - sudo modprobe wireguard
         If error thrown restart and try again
         test with - lsmod | grep wireguard
     - cd /etc/wireguard
     - umask 077
     - wg genkey | sudo tee privatekey | wg pubkey | sudo tee publickey
-    - client_private_key=$(cat privatekey)
-    - client_public_key=$(cat publickey)
+    - client_privatekey=$(cat privatekey)
+    - client_publickey=$(cat publickey)
     - server_ip=54.151.38.188
     For Each Server
         - cat << EOF >> wg0.conf
-        [Interface]
-        Address = 10.10.0.2/32
-        Address = fd86:ea04:1111::2/128
-        SaveConfig = true
-        PrivateKey = $client_private_key
-        DNS = 1.1.1.1
-            
-        [Peer]
-        PublicKey = server_pubkey
-        Endpoint = $server_ip:51820
-        AllowedIPs = 0.0.0.0/0, ::/0
-        EOF
+            [Interface]
+            Address = 10.10.0.2/32
+            Address = fd86:ea04:1111::2/128
+            SaveConfig = true
+            PrivateKey = $client_private_key
+            DNS = 1.1.1.1
+                
+            [Peer]
+            PublicKey = server_pubkey
+            Endpoint = $server_ip:51820
+            AllowedIPs = 0.0.0.0/0, ::/0
+            EOF
         - chmod 600 /etc/wireguard/wg0.conf
     End For Each
 - 2. Server
     For Each Server
-        - client_publickey = !!! Client Public Key from client setup !!!
         - sudo apt update
         - sudo apt dist-upgrade
         - sudo add-apt-repository ppa:wireguard/wireguard
@@ -39,11 +38,13 @@
         - sudo modprobe wireguard
             If error thrown restart and try again
             test with - lsmod | grep wireguard
+        - sudo su
         - cd /etc/wireguard
         - umask 077
         - wg genkey | sudo tee privatekey | wg pubkey | sudo tee publickey
         - server_privatekey=$(cat privatekey)
         - server_publickey=$(cat publickey)
+        - client_publickey=!!! Client Public Key from client setup !!!
         - cat << EOF >> wg0.conf
             [Interface]
             PrivateKey = $server_privatekey
@@ -67,9 +68,9 @@
     End For Each
 - 3. Client
     For Each Server
-        - server_public_key= !!! server public key from server setup !!!
+        - server_publickey= !!! server public key from server setup !!!
         - server_ip = !!! server ip from server setup !!!
-        - sed -i "s/server_pubkey/$server_public_key/g" wg0.conf
+        - sed -i "s/server_pubkey/$server_publickey/g" wg0.conf
         - sed -i "s/server_ip/$server_ip/g" wg0.conf
         - wg-quick up wg0
     End For Each
